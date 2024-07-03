@@ -1,0 +1,18 @@
+.random{
+    margin: auto;
+    margin-bottom: 20px;
+    display: block;
+}
+.button{
+    font-size: 50px;
+    text-align: center;
+}
+#random-pool{
+    font-size: 25px;
+    height: 200px;
+    width: 40%;
+}
+#random-result{
+    font-size: 100px;
+    text-align: center;
+}
