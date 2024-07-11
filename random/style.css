@@ -16,3 +16,12 @@
     font-size: 100px;
     text-align: center;
 }
+#video{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
