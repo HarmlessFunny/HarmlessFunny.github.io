@@ -84,7 +84,7 @@ void showItem(vector<NoteItem> item){
     }
     if(!flag) cout << ">>无背诵内容" << endl;
 }
-void exportNotesToMarkdown(const vector<NoteItem>& notes, string title, const string& path = "./answers/export.md") {
+void exportNotesToMarkdown(const vector<NoteItem>& notes, string title, const string& path) {
     if (notes.empty()) return;
     map<string, vector<string>> groupedNotes;
     for (const auto& note : notes) {
@@ -117,9 +117,9 @@ int main() {
 	    
         string dateString = to_string(nowYear)+"年"+to_string(nowMonth)+"月"+to_string(nowDay)+"日";
         auto item = chooseNotes(nowYear,nowMonth,nowDay);
-    	exportNotesToMarkdown(item,dateString); 
+    	exportNotesToMarkdown(item,dateString,"./answers/export.md"); 
     	auto allItem = chooseNotes(nowYear,nowMonth,nowDay,false);
-		exportNotesToMarkdown(allItem,"全部");
+		exportNotesToMarkdown(allItem,"全部","./answers/allExport.md");
 	    
 		system("git add . -f");
 		system("git add ./answers/export.md -f");
