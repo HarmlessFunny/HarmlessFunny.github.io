@@ -48,6 +48,6 @@ def main():
     # 根据转换结果设置退出码（0表示成功，非0表示失败）
     sys.exit(0 if success else 1)
 
-if __name__ == "__main__":
-    print("hello world")
-    main()
+# if __name__ == "__main__":
+    # print("hello world")
+    # main()
