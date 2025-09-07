@@ -29,7 +29,7 @@ int dateToDays(int year, int month, int day) {
 int dateDifference(int yearA, int monthA, int dayA, int yearB, int monthB, int dayB) {
     int dateA = dateToDays(yearA, monthA, dayA);
     int dateB = dateToDays(yearB, monthB, dayB);
-    if (dateA == -1 || dateB == -1) return -1; // å¤„ç†æ— æ•ˆæ—¥æœŸ
+    if (dateA == -1 || dateB == -1) return -1; // ´¦ÀíÎŞĞ§ÈÕÆÚ
     return dateB - dateA;
 }
 vector<string> splitByFourSpaces(const string& input) {
@@ -55,7 +55,7 @@ vector<NoteItem> chooseNotes(int targetYear, int targetMonth, int targetDay, boo
 	vector<NoteItem> item;
 	file.open(filePath, ios::in);
 	if (!file.is_open()) {
-	    cerr << ">>æ— æ³•æ‰“å¼€æ–‡ä»¶" << endl;
+	    cerr << ">>ÎŞ·¨´ò¿ªÎÄ¼ş" << endl;
 	    return item;
 	}
 	string line;
@@ -82,7 +82,7 @@ void showItem(vector<NoteItem> item){
         cout << ">>  " << (*t).content << endl;
 		flag = true;
     }
-    if(!flag) cout << ">>æ— èƒŒè¯µå†…å®¹" << endl;
+    if(!flag) cout << ">>ÎŞ±³ËĞÄÚÈİ" << endl;
 }
 void exportNotesToMarkdown(const vector<NoteItem>& notes, string title, const string& path) {
     if (notes.empty()) return;
@@ -103,7 +103,7 @@ void exportNotesToMarkdown(const vector<NoteItem>& notes, string title, const st
 }
 
 int main() {
-    cout << ">>1ï¼šå†™å…¥" << endl << ">>2ï¼šæŸ¥è¯¢æŒ‡å®šæ—¥æœŸèƒŒè¯µå†…å®¹" << endl << ">>3ï¼šæ‰“å¼€å­˜å‚¨æ–‡ä»¶" << endl << ">>0ï¼šé€€å‡º" << endl << endl;
+    cout << ">>1£ºĞ´Èë" << endl << ">>2£º²éÑ¯Ö¸¶¨ÈÕÆÚ±³ËĞÄÚÈİ" << endl << ">>3£º´ò¿ª´æ´¢ÎÄ¼ş" << endl << ">>0£ºÍË³ö" << endl << endl;
     bool isFirstNoteInput = false;
     bool isFirstDateInput = false;
     system("git init");
@@ -115,11 +115,11 @@ int main() {
 	    nowMonth = localTime->tm_mon + 1;
 	    nowDay = localTime->tm_mday;
 	    
-        string dateString = to_string(nowYear)+"å¹´"+to_string(nowMonth)+"æœˆ"+to_string(nowDay)+"æ—¥";
+        string dateString = to_string(nowYear)+"Äê"+to_string(nowMonth)+"ÔÂ"+to_string(nowDay)+"ÈÕ";
         auto item = chooseNotes(nowYear,nowMonth,nowDay);
     	exportNotesToMarkdown(item,dateString,"./answers/export.md"); 
     	auto allItem = chooseNotes(nowYear,nowMonth,nowDay,false);
-		exportNotesToMarkdown(allItem,"å…¨éƒ¨","./answers/allExport.md");
+		exportNotesToMarkdown(allItem,"È«²¿","./answers/allExport.md");
 	    
 		system("git add . -f");
 		system("git add ./answers/export.md -f");
@@ -134,11 +134,11 @@ int main() {
 	    if (n == "1") {
 	        file.open(filePath, ios::app);
 			if (!file.is_open()) {
-			    cerr << ">>æ— æ³•æ‰“å¼€æ–‡ä»¶" << endl;
+			    cerr << ">>ÎŞ·¨´ò¿ªÎÄ¼ş" << endl;
 			    return -1;
 			}
-	        if(!isFirstNoteInput) cout << ">>è¯·è¾“å…¥ï¼Œè¾“å…¥æ ¼å¼ï¼šç§‘ç›®(ç©ºæ ¼)å†…å®¹ï¼Œç§‘ç›®å’Œå†…å®¹å½“ä¸­å‡ä¸èƒ½åŒ…å«ç©ºæ ¼å’Œæ¢è¡Œç¬¦" << endl;
-	        else cout << ">>è¯·è¾“å…¥" << endl; 
+	        if(!isFirstNoteInput) cout << ">>ÇëÊäÈë£¬ÊäÈë¸ñÊ½£º¿ÆÄ¿(¿Õ¸ñ)ÄÚÈİ£¬¿ÆÄ¿ºÍÄÚÈİµ±ÖĞ¾ù²»ÄÜ°üº¬¿Õ¸ñºÍ»»ĞĞ·û" << endl;
+	        else cout << ">>ÇëÊäÈë" << endl; 
 			cout << "<<";
 		    string item;
 		    getline(cin, item);
@@ -153,30 +153,30 @@ int main() {
 	        mdFile.close();
 		    file.close();
 	        system((".\\answers\\"+subject+"\\"+content+".md").c_str());
-		    cout << ">>å·²å®Œæˆ" << endl << endl;
+		    cout << ">>ÒÑÍê³É" << endl << endl;
 	    }
 	    else if (n == "2") {
-	        if(!isFirstDateInput) cout << ">>è¯·è¾“å…¥æ—¥æœŸï¼Œè¾“å…¥æ ¼å¼ï¼šå¹´(ç©ºæ ¼)æœˆ(ç©ºæ ¼)æ—¥" << endl << "<<";
-	        else cout<< ">>è¯·è¾“å…¥" << endl << "<<";
+	        if(!isFirstDateInput) cout << ">>ÇëÊäÈëÈÕÆÚ£¬ÊäÈë¸ñÊ½£ºÄê(¿Õ¸ñ)ÔÂ(¿Õ¸ñ)ÈÕ" << endl << "<<";
+	        else cout<< ">>ÇëÊäÈë" << endl << "<<";
 	        string date;
 	        getline(cin,date);
 	        auto d = splitByFourSpaces(date+" ");
 	        auto item = chooseNotes(stoi(d[0]), stoi(d[1]), stoi(d[2]));
 	    	showItem(item);
 	    	isFirstDateInput=1;
-		    cout << ">>å·²å®Œæˆ" << endl << endl;
+		    cout << ">>ÒÑÍê³É" << endl << endl;
 	    }
 	    else if (n == "3") {
-	        cout << ">>ç­‰å¾…ä¸­ï¼Œå…³é—­çª—å£ä»¥ç»§ç»­" << endl;
+	        cout << ">>µÈ´ıÖĞ£¬¹Ø±Õ´°¿ÚÒÔ¼ÌĞø" << endl;
 	        system((filePath).c_str());
-		    cout << ">>å·²å®Œæˆ" << endl << endl;
+		    cout << ">>ÒÑÍê³É" << endl << endl;
 	    }
 	    else if (n == "0") {
-		    cout << ">>å·²é€€å‡º" << endl << endl;
+		    cout << ">>ÒÑÍË³ö" << endl << endl;
 	        return 0;
 	    }
 	    else {
-	        cout << ">>ä¸æ˜¯å¯ç”¨çš„æ•°å­—" << endl << endl;
+	        cout << ">>²»ÊÇ¿ÉÓÃµÄÊı×Ö" << endl << endl;
 	    }
 	}
 }
