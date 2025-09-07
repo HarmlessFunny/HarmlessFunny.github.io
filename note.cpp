@@ -153,6 +153,7 @@ int main() {
 	        mdFile.close();
 		    file.close();
 		    string gbktoutf8="\"e:\\Program Files\\Python\\python.exe\" \".\\GBKtoUTF8.py\" "+dir;
+		    cout<<gbktoutf8;
 		    system(gbktoutf8.c_str());
 	        system((".\\answers\\"+subject+"\\"+content+".md").c_str());
 		    cout << ">>ÒÑÍê³É" << endl << endl;
