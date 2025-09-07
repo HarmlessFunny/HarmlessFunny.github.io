@@ -118,9 +118,6 @@ int main() {
         auto item = chooseNotes(nowYear,nowMonth,nowDay);
     	exportNotesToMarkdown(item,dateString,"./answers/export.md");
 	    system("py .\\GBKtoUTF8.py ./answers/export.md");
-    	auto allItem = chooseNotes(nowYear,nowMonth,nowDay,false);
-		exportNotesToMarkdown(allItem,"È«²¿","./answers/allExport.md");
-	    system("py .\\GBKtoUTF8.py ./answers/allExport.md");
 	    
 		system("git add . -f");
 		system("git add ./answers/export.md -f");
