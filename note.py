@@ -35,7 +35,7 @@ def DaysDifference(tsLate, tsEarly):
     dayEarly = tsEarly // 86400
     return int(abs(dayLate - dayEarly))
 
-def getNotes():
+def getAllNotes():
     """
     遍历根目录下的每个子文件夹，获取所有.md文件的信息
     :param root_dir: 根目录路径
@@ -57,14 +57,17 @@ def getNotes():
     return files_info
 
 def filterNotes(tsTarget, isFilter = True):
-    notes = getNotes()
+    notes = getAllNotes()
     filteredNotes = [note for note in notes if not isFilter or DaysDifference(tsTarget, note['last_modified']) in target_days]
     return filteredNotes
 
-def writeNotes(notes,filename):
+def writeNotes(notes,filename,title=""):
     with open(root_dir+"\\"+filename+".md", "w", encoding="utf-8") as file:
-        human_time = time.strftime('%Y年%m月%d日', time.localtime(tsnow))
-        file.write(f"## {human_time}\n")
+        if title=="":
+            human_time = time.strftime('%Y-%m-%d', time.localtime(tsnow))
+            file.write(f"## {human_time}\n")
+        else:
+            file.write(f"## {title}\n")
         lastSubject=""
         for note in notes:
             content, subject = note['content'], note['subject']
@@ -79,7 +82,9 @@ print(">>1：写入\n>>2：查询指定日期背诵内容\n>>3：打开存储文
 while True:
     tsNow = time.time()
     filteredNotes = filterNotes(tsNow)
+    allNotes = getAllNotes()
     writeNotes(filteredNotes,"export2")
+    writeNotes(allNotes,"allExport2","全部")
     operation = input("<<")
     if operation == "0":
         print("已退出\n")
