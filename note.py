@@ -8,11 +8,14 @@ import subprocess
 import sys
 import time
 import configparser
+import shutil
 from typing import Dict, List, Tuple
+
+import markdown
 
 # 配置常量
 DEFAULT_CONFIG = {
-    'Paths': {'root_dir': './answers', 'export_dir': './answers'},
+    'Paths': {'root_dir': './answers'},
     'ReviewSchedule': {'target_days': '0,1,2,4,7,15,30,60,120,240'},
     'Git': {
         'enabled': 'no',
@@ -50,15 +53,11 @@ def load_config() -> Dict[str, List]:
 
     # 处理目录
     root_dir = config.get('Paths', 'root_dir')
-    export_dir = config.get('Paths', 'export_dir')
     if not os.path.isabs(root_dir):
         root_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), root_dir)
-    if not os.path.isabs(export_dir):
-        export_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), export_dir)
     
     return {
         'root_dir': root_dir,
-        'export_dir': export_dir,
         'target_days': target_days,
         'git_enabled': git_enabled,
         'git_remote': git_remote,
@@ -147,9 +146,9 @@ def filter_notes(notes: List[Dict], target_timestamp: int, target_days: List[int
     ]
     return filtered_notes
 
-def write_notes(notes: List[Dict], export_dir: str, filename: str, title: str = "") -> None:
+def write_notes(notes: List[Dict], root_dir: str, filename: str, title: str = "") -> None:
     """将笔记列表写入文件"""
-    file_path = os.path.join(export_dir, f"{filename}")
+    file_path = os.path.join(root_dir, f"{filename}")
     
     with open(file_path, "w", encoding="utf-8") as file:
         if not title:
@@ -166,24 +165,24 @@ def write_notes(notes: List[Dict], export_dir: str, filename: str, title: str = 
                 last_subject = subject
             file.write(f"- [{content}]({subject}/{content}.md)\n")
 
-def update_export_files(root_dir: str,export_dir: str, target_days: List[int], specialized: bool) -> None:
+def update_export_files(root_dir: str, target_days: List[int], specialized: bool) -> None:
     """更新导出文件"""
     all_notes = get_all_notes(root_dir)
     current_time = time.time()
     filtered_notes = filter_notes(all_notes, current_time, target_days)
     
-    write_notes(filtered_notes, export_dir, EXPORT_FILE)
-    write_notes(all_notes, export_dir, ALL_EXPORT_FILE, "全部")
+    write_notes(filtered_notes, root_dir, EXPORT_FILE)
+    write_notes(all_notes, root_dir, ALL_EXPORT_FILE, "全部")
     
     if specialized:
         print("<< 已生成 export.md 和 allExport.md 文件\n")
         try:
-            file_path = os.path.join(export_dir, EXPORT_FILE)
+            file_path = os.path.join(root_dir, EXPORT_FILE)
             subprocess.run(f'start /wait "" "{file_path}"', shell=True, check=True)
         except OSError as e:
             print(f">> 无法自动打开文件: {e}")
 
-def write_operation(root_dir: str,export_dir: str, target_days: List[int], repeat: bool) -> None:
+def write_operation(root_dir: str, target_days: List[int], repeat: bool) -> None:
     """处理写入操作"""
     is_first_input = True
     last_subject = ""  # 新增：记录最后使用的科目
@@ -248,12 +247,14 @@ def write_operation(root_dir: str,export_dir: str, target_days: List[int], repea
             except OSError as e:
                 print(f">> 无法自动打开文件: {e}")
         # 更新导出文件
-        update_export_files(root_dir, export_dir, target_days, False)
+        update_export_files(root_dir, target_days, False)
         if(not repeat):
             break
 
-def git_push_operation(repo_path: str, remote: str, branch: str) -> bool:
+def git_push_operation(root_dir: str, repo_path: str, remote: str, branch: str) -> bool:
     """执行Git提交和推送操作"""
+    
+    convert_md_to_html(root_dir)
     try:
         # 添加所有更改
         subprocess.run(['git', 'add', '-A'], cwd=repo_path, check=True)
@@ -289,12 +290,98 @@ def clean_screen_operation(notes_number: int, git_enabled: bool, is_first_input:
 
     print()
 
+def convert_md_to_html(root_dir: str) -> None:
+    """将MD文件转换为HTML文件并保持目录结构"""
+    html_root = os.path.join(root_dir, "html")
+    
+    # 清空或创建HTML目录
+    if os.path.exists(html_root):
+        shutil.rmtree(html_root)
+    os.makedirs(html_root, exist_ok=True)
+    
+    # 复制目录结构
+    for root, dirs, files in os.walk(root_dir):
+        # 跳过HTML目录本身
+        if "html" in root:
+            continue
+            
+        # 创建对应的HTML目录
+        relative_path = os.path.relpath(root, root_dir)
+        html_dir_path = os.path.join(html_root, relative_path)
+        os.makedirs(html_dir_path, exist_ok=True)
+        
+        # 转换MD文件为HTML
+        for file in files:
+            if file.endswith('.md'):
+                md_file_path = os.path.join(root, file)
+                html_file_path = os.path.join(html_dir_path, file.replace('.md', '.html'))
+                
+                # 尝试不同编码读取文件
+                encodings = ['utf-8', 'gbk', 'latin1', 'iso-8859-1']
+                md_content = None
+                
+                for encoding in encodings:
+                    try:
+                        with open(md_file_path, 'r', encoding=encoding) as md_file:
+                            md_content = md_file.read()
+                        break  # 成功读取则跳出循环
+                    except UnicodeDecodeError:
+                        continue  # 尝试下一个编码
+                    except Exception as e:
+                        print(f">> 无法读取文件 {md_file_path}: {e}")
+                        md_content = None
+                        break
+                
+                # 如果所有编码都失败，使用替代内容
+                if md_content is None:
+                    md_content = f"# 文件读取错误\n\n无法正确读取原始文件内容"
+                    print(f">> 警告: 无法读取文件 {md_file_path}，使用替代内容")
+                
+                # 转换Markdown为HTML
+                try:
+                    html_content = markdown.markdown(md_content)
+                except Exception as e:
+                    html_content = f"<h1>Markdown转换错误</h1><p>{str(e)}</p>"
+                    print(f">> 警告: 转换文件 {md_file_path} 时出错: {e}")
+                
+                # 写入HTML文件
+                try:
+                    with open(html_file_path, 'w', encoding='utf-8') as html_file:
+                        if(file=="export.md"):
+                            html_content = html_content.replace(".md\">",".html\">")
+                        else:
+                            html_content = html_content+f"<a href=\"{os.path.join("..", "export.html")}\">返回</a>"
+                        html_file.write(f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{os.path.splitext(file)[0]}</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }}
+        h1, h2, h3, h4, h5, h6 {{ color: #333; }}
+        a {{ color: #0366d6; text-decoration: none; }}
+        a:hover {{ text-decoration: underline; }}
+        ul, ol {{ padding-left: 20px; }}
+        code {{ background-color: #f6f8fa; padding: 2px 4px; border-radius: 3px; }}
+        pre {{ background-color: #f6f8fa; padding: 10px; border-radius: 3px; overflow: auto; }}
+        pre code {{ background-color: transparent; padding: 0; }}
+    </style>
+</head>
+<body>
+{html_content}
+</body>
+</html>""")
+                except Exception as e:
+                    print(f">> 无法写入HTML文件 {html_file_path}: {e}")
+    
+    print(f">> 已将所有MD文件转换为HTML文件，存放在: {html_root}")
+
 def main() -> None:
     """主函数"""
     # 加载配置
     config = load_config()
     root_dir = config['root_dir']
-    export_dir = config['export_dir']
     target_days = config['target_days']
     git_enabled = config['git_enabled']
     git_remote = config['git_remote']
@@ -316,7 +403,7 @@ def main() -> None:
     # 初始导出
     current_time = time.time()
     filtered_notes = filter_notes(get_all_notes(root_dir), current_time, target_days)
-    write_notes(filtered_notes, export_dir, EXPORT_FILE)
+    write_notes(filtered_notes, root_dir, EXPORT_FILE)
     
     clean_screen_operation(len(filtered_notes), git_enabled, True)
     
@@ -328,17 +415,17 @@ def main() -> None:
             print(">> 已退出\n")
             break
         elif operation == "1":
-            write_operation(root_dir, export_dir, target_days, False)
+            write_operation(root_dir, target_days, False)
         elif operation == "1 -r":
-            write_operation(root_dir, export_dir, target_days, True)
+            write_operation(root_dir, target_days, True)
         elif operation == "2":
-            update_export_files(root_dir, export_dir, target_days, True)
+            update_export_files(root_dir, target_days, True)
         elif operation == "git" and git_enabled:
             print(">> 尝试推送更改...")
-            if git_push_operation(repo_path, git_remote, git_branch):
-                print(">> 推送成功")
+            if git_push_operation(root_dir, repo_path, git_remote, git_branch):
+                print(">> 推送成功\n")
             else:
-                print(">> 推送失败")
+                print(">> 推送失败\n")
         elif operation == "cls":
             filtered_notes = filter_notes(get_all_notes(root_dir), current_time, target_days)
             clean_screen_operation(len(filtered_notes), git_enabled, False)
@@ -348,3 +435,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+    # convert_md_to_html("./answers")
