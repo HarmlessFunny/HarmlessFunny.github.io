@@ -56,6 +56,72 @@
     cursor:pointer;
   }
   .tbtn:active{background:#e9eef6}
+  .tgroup{display:flex;gap:10px}
+
+  /* ---------- 名单列表（只读） ---------- */
+  .mask{
+    position:fixed;
+    inset:0;
+    background:rgba(31,41,55,.45);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:40;
+  }
+  .mask.show{display:flex}
+  .panel{
+    background:var(--card);
+    border-radius:18px;
+    width:min(1000px,100%);
+    max-height:min(82vh,780px);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    box-shadow:0 18px 50px rgba(15,23,42,.3);
+  }
+  .phead{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 18px;
+    border-bottom:2px solid var(--line);
+  }
+  .phead h2{font-size:20px;margin:0;font-weight:700;letter-spacing:1px}
+  .phead .sub{font-size:15px;font-weight:400;color:var(--muted);letter-spacing:0}
+  .plist{
+    flex:1 1 auto;
+    min-height:0;
+    overflow:auto;
+    padding:16px 18px 20px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(132px,1fr));
+    gap:8px 12px;
+    user-select:text;
+  }
+  .pitem{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    font-size:19px;
+    line-height:1.4;
+    padding:6px 10px;
+    border:1px solid #e4ebf4;
+    border-radius:10px;
+    background:#f6f9fd;
+  }
+  .pitem i{
+    font-style:normal;
+    font-size:13px;
+    color:var(--muted);
+    min-width:24px;
+    text-align:right;
+    flex:0 0 auto;
+  }
+  .pitem b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pempty{grid-column:1 / -1;color:var(--muted);font-size:17px;padding:10px 2px}
 
   /* ---------- 结果区 ---------- */
   main{
@@ -220,7 +286,10 @@
 
 <header>
   <h1>点 名 器</h1>
-  <button class="tbtn" id="btnFull">全屏</button>
+  <div class="tgroup">
+    <button class="tbtn" id="btnList">列表</button>
+    <button class="tbtn" id="btnFull">全屏</button>
+  </div>
 </header>
 
 <main>
@@ -244,6 +313,17 @@
 </footer>
 
 <div class="toast" id="toast"></div>
+
+<!-- 名单列表：只读，点右上角“列表”打开 -->
+<div class="mask" id="listMask">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="listTitle">
+    <div class="phead">
+      <h2 id="listTitle">名单列表 <span class="sub" id="listSub"></span></h2>
+      <button class="tbtn" id="btnListClose">关闭</button>
+    </div>
+    <div class="plist" id="listBody"></div>
+  </div>
+</div>
 
 <script>
 /* =======================================================================
@@ -466,6 +546,50 @@ var DEFAULT_COUNT = 1;
     updateStatus();
   }
 
+  /* ---------------- 名单列表（只读） ---------------- */
+
+  var elListMask = $("listMask");
+  var elListBody = $("listBody");
+  var elListSub = $("listSub");
+
+  function listOpen() { return elListMask.classList.contains("show"); }
+
+  function openList() {
+    elListBody.innerHTML = "";
+    if (!names.length) {
+      var empty = document.createElement("div");
+      empty.className = "pempty";
+      empty.textContent = "名单为空，请在文件里填写 NAMES";
+      elListBody.appendChild(empty);
+      elListSub.textContent = "";
+    } else {
+      for (var i = 0; i < names.length; i++) {
+        var row = document.createElement("div");
+        row.className = "pitem";
+        var no = document.createElement("i");
+        no.textContent = String(i + 1);
+        var nm = document.createElement("b");
+        nm.textContent = names[i];
+        row.appendChild(no);
+        row.appendChild(nm);
+        elListBody.appendChild(row);
+      }
+      elListSub.textContent = "（共 " + names.length + " 人 · 只读）";
+    }
+    elListBody.scrollTop = 0;
+    elListMask.classList.add("show");
+  }
+
+  function closeList() { elListMask.classList.remove("show"); }
+
+  $("btnList").addEventListener("click", function () {
+    if (listOpen()) closeList(); else openList();
+  });
+  $("btnListClose").addEventListener("click", closeList);
+  elListMask.addEventListener("click", function (e) {
+    if (e.target === elListMask) closeList();   // 点空白处关闭
+  });
+
   /* ---------------- 事件 ---------------- */
 
   $("plus").addEventListener("click", function () {
@@ -521,7 +645,13 @@ var DEFAULT_COUNT = 1;
   });
 
   document.addEventListener("keydown", function (e) {
+    // 列表打开时：只响应 Esc 关闭，不触发点名
+    if (listOpen()) {
+      if (e.key === "Escape") { e.preventDefault(); closeList(); }
+      return;
+    }
     if (e.code === "Space" || e.key === "Enter") {
+      if (e.target && e.target.id === "btnList") return;  // 让“列表”按钮自己响应回车/空格
       e.preventDefault();
       start();
       return;
