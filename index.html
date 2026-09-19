@@ -327,16 +327,23 @@
 
 <script>
 /* =======================================================================
-   名单在这里改：一个名字一行，用引号包起来，行尾加英文逗号。
+   名单在这里改：一人一行，写成 {name:"姓名",sex:"性别"}，行尾加英文逗号。
    名字不需要按顺序，改完保存文件、刷新页面即可。姓名里可以有空格。
    ======================================================================= */
 var NAMES = [
-"任超","李欣洁","肖雄博","赵子涵","冯梓尧","薛煜祺","秦浩","管鑫瑞","续珂涵","韩高",
-"李奕","张堉楠","李宜珈","朱禹丞","李佳麟","石可欣","史沂轩","王严卿","赵俊杰","张语凡",
-"莫森","袁心怡","刘珍源","孙歌","董峻熙","温佳欣","柳颎婷","白轩","王涵","杨奎",
-"庞诗颖","纪满烨","李穆宸","邢迪扉","尚钰杰","李林泽","张誉轩","陈渲","武文涛","王毓斐",
-"张洋","王馨怡","政柏羽","陈伊珂","霍晨曦","孙天宇","史鹏捷","张子悦","何洋","张嘉怡",
-"李子阳","何若蓓","郝文璇","王思诺","王子涵","郭南雁","王思涵","侯佳钧","贺乙轩","高煊","王然"
+  {name:"任超",sex:"m"}, {name:"李欣洁",sex:"f"}, {name:"肖雄博",sex:"m"}, {name:"赵子涵",sex:"f"}, {name:"冯梓尧",sex:"f"},
+  {name:"薛煜祺",sex:"m"}, {name:"秦浩",sex:"m"}, {name:"管鑫瑞",sex:"f"}, {name:"续珂涵",sex:"f"}, {name:"韩高",sex:"m"},
+  {name:"李奕",sex:"m"}, {name:"张堉楠",sex:"f"}, {name:"李宜珈",sex:"f"}, {name:"朱禹丞",sex:"m"}, {name:"李佳麟",sex:"m"},
+  {name:"石可欣",sex:"f"}, {name:"史沂轩",sex:"f"}, {name:"王严卿",sex:"m"}, {name:"赵俊杰",sex:"m"}, {name:"张语凡",sex:"f"},
+  {name:"莫森",sex:"m"}, {name:"袁心怡",sex:"f"}, {name:"刘珍源",sex:"f"}, {name:"孙歌",sex:"m"}, {name:"董峻熙",sex:"m"},
+  {name:"温佳欣",sex:"f"}, {name:"柳颎婷",sex:"f"}, {name:"白轩",sex:"m"}, {name:"王涵",sex:"m"}, {name:"杨奎",sex:"f"},
+  {name:"庞诗颖",sex:"f"}, {name:"纪满烨",sex:"m"}, {name:"李穆宸",sex:"m"}, {name:"邢迪扉",sex:"f"}, {name:"尚钰杰",sex:"m"},
+  {name:"李林泽",sex:"f"}, {name:"张誉轩",sex:"m"}, {name:"陈渲",sex:"f"}, {name:"武文涛",sex:"m"}, {name:"王毓斐",sex:"f"},
+  {name:"张洋",sex:"m"}, {name:"王馨怡",sex:"f"}, {name:"政柏羽",sex:"m"}, {name:"陈伊珂",sex:"f"}, {name:"霍晨曦",sex:"f"},
+  {name:"孙天宇",sex:"m"}, {name:"史鹏捷",sex:"m"}, {name:"张子悦",sex:"f"}, {name:"何洋",sex:"m"}, {name:"张嘉怡",sex:"f"},
+  {name:"李子阳",sex:"m"}, {name:"何若蓓",sex:"f"}, {name:"郝文璇",sex:"f"}, {name:"王思诺",sex:"m"}, {name:"王子涵",sex:"m"},
+  {name:"郭南雁",sex:"f"}, {name:"王思涵",sex:"f"}, {name:"侯佳钧",sex:"m"}, {name:"贺乙轩",sex:"f"}, {name:"高煊",sex:"m"},
+  {name:"王然",sex:"f"}
 ];
 
 /* 打开页面时默认抽几个人（页面上随时可改） */
@@ -354,11 +361,17 @@ var DEFAULT_COUNT = 1;
   var elStart = $("btnStart");
   var elToast = $("toast");
 
+  // 取名字：NAMES 每项是 {name:"姓名",sex:"性别"}
+  function nameOf(item) {
+    if (item == null) return "";
+    return item.name == null ? "" : String(item.name);
+  }
+
   // 去掉空项和完全重复的名字
   var names = (function () {
     var seen = {}, out = [];
     for (var i = 0; i < NAMES.length; i++) {
-      var s = String(NAMES[i]).trim();
+      var s = nameOf(NAMES[i]).trim();
       if (!s || seen[s]) continue;
       seen[s] = true;
       out.push(s);
