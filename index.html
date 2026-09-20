@@ -97,7 +97,7 @@
     overflow:auto;
     padding:16px 18px 20px;
     display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(132px,1fr));
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
     gap:8px 12px;
     user-select:text;
   }
@@ -112,6 +112,7 @@
     border-radius:10px;
     background:#f6f9fd;
   }
+  .pitem.dim{opacity:.35}
   .pitem i{
     font-style:normal;
     font-size:13px;
@@ -121,7 +122,16 @@
     flex:0 0 auto;
   }
   .pitem b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pempty{grid-column:1 / -1;color:var(--muted);font-size:17px;padding:10px 2px}
+  .pitem em{
+    font-style:normal;
+    font-size:13px;
+    line-height:1.5;
+    color:var(--muted);
+    background:#e9eef6;
+    border-radius:6px;
+    padding:0 6px;
+    flex:0 0 auto;
+  }
 
   /* ---------- 结果区 ---------- */
   main{
@@ -222,6 +232,30 @@
   }
   .countbox .val small{font-size:16px;font-weight:400;color:var(--muted)}
 
+  /* ---------- 抽取范围（按性别） ---------- */
+  .sexbox{
+    display:flex;
+    align-items:center;
+    border:2px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .sexbtn{
+    font:inherit;
+    font-size:17px;
+    height:66px;
+    padding:0 18px;
+    border:0;
+    border-left:2px solid var(--line);
+    background:#fff;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .sexbtn:first-child{border-left:0}
+  .sexbtn:active{background:#eef2f7}
+  .sexbtn.on{background:var(--accent);color:#fff;font-weight:700}
+
   .start{
     font:inherit;
     font-size:30px;
@@ -300,6 +334,12 @@
 </main>
 
 <footer>
+  <div class="sexbox" id="sexBox">
+    <button class="sexbtn on" data-sex="">全</button>
+    <button class="sexbtn" data-sex="m">男</button>
+    <button class="sexbtn" data-sex="f">女</button>
+  </div>
+
   <div class="countbox">
     <button class="step" id="minus" aria-label="减少人数">−</button>
     <div class="val"><span id="cnt">1</span><small>人</small></div>
@@ -360,25 +400,21 @@ var DEFAULT_COUNT = 1;
   var elNoRepeat = $("norepeat");
   var elStart = $("btnStart");
   var elToast = $("toast");
+  var elSexBox = $("sexBox");
 
-  // 取名字：NAMES 每项是 {name:"姓名",sex:"性别"}
-  function nameOf(item) {
-    if (item == null) return "";
-    return item.name == null ? "" : String(item.name);
-  }
+  function sexText(s) { return s === "m" ? "男" : "女"; }
 
-  // 去掉空项和完全重复的名字
-  var names = (function () {
-    var seen = {}, out = [];
+  var sex = "";   // ""=全部，"m"=男，"f"=女
+
+  function namesIn(v) {
+    var out = [];
     for (var i = 0; i < NAMES.length; i++) {
-      var s = nameOf(NAMES[i]).trim();
-      if (!s || seen[s]) continue;
-      seen[s] = true;
-      out.push(s);
+      if (!v || NAMES[i].sex === v) out.push(NAMES[i].name);
     }
     return out;
-  })();
+  }
 
+  var names = namesIn(sex);   // 当前抽取范围内的名字
   var pool = names.slice();   // 不重复模式下的剩余名单
   var count = 1;
   var rolling = false;
@@ -397,7 +433,6 @@ var DEFAULT_COUNT = 1;
   function maxCount() { return Math.max(1, Math.min(60, names.length)); }
 
   function setCount(v) {
-    if (!names.length) { count = 1; elCnt.textContent = "1"; return; }
     v = parseInt(v, 10);
     if (isNaN(v)) v = 1;
     count = Math.max(1, Math.min(maxCount(), v));
@@ -436,8 +471,8 @@ var DEFAULT_COUNT = 1;
   function measureSlotWidth(n) {
     meas.setAttribute("data-n", sizeKey(n));
     var w = 0;
-    for (var i = 0; i < names.length; i++) {
-      measName.textContent = names[i];
+    for (var i = 0; i < NAMES.length; i++) {
+      measName.textContent = NAMES[i].name;
       var x = measName.getBoundingClientRect().width;
       if (x > w) w = x;
     }
@@ -457,13 +492,12 @@ var DEFAULT_COUNT = 1;
   }
 
   function updateStatus(extra) {
-    if (!names.length) {
-      elStatus.textContent = "名单为空，请在文件里填写 NAMES";
-      return;
-    }
-    var base = "名单共 " + names.length + " 人";
+    if (extra) { elStatus.textContent = extra; return; }
+    var base = sex
+      ? sexText(sex) + " " + names.length + " 人　·　名单共 " + NAMES.length + " 人"
+      : "名单共 " + NAMES.length + " 人";
     if (elNoRepeat.checked) base += "　·　剩余 " + pool.length + " 人";
-    elStatus.textContent = extra || base;
+    elStatus.textContent = base;
   }
 
   function randomOf(arr) { return arr[(Math.random() * arr.length) | 0]; }
@@ -495,12 +529,7 @@ var DEFAULT_COUNT = 1;
   }
 
   function start() {
-    if (rolling) return;
-
-    if (!names.length) {
-      toast("名单为空，请在文件里填写 NAMES");
-      return;
-    }
+    if (rolling || !names.length) return;
     if (count > names.length) setCount(names.length);
 
     var winners = pickWinners(count);
@@ -555,9 +584,33 @@ var DEFAULT_COUNT = 1;
     renderNames(winners, winners.length);
     elResults.setAttribute("data-n", sizeKey(winners.length));
     syncSlotWidth();
-    // 抽完把「名单共 xx 人 · 剩余 xx 人」显示回来（抽中的人就在屏幕上了）
+    // 抽完把「xx 人 · 剩余 xx 人」显示回来（抽中的人就在屏幕上了）
     updateStatus();
   }
+
+  /* ---------------- 抽取范围（按性别，按钮写在 HTML 里） ---------------- */
+
+  function setSex(v) {
+    if (v === sex) return;
+    sex = v;
+    names = namesIn(sex);
+    pool = names.slice();          // 换了范围，不重复抽取的记录也重新开始
+    setCount(count);
+    var bs = elSexBox.children;
+    for (var i = 0; i < bs.length; i++) {
+      bs[i].className = (bs[i].getAttribute("data-sex") || "") === sex ? "sexbtn on" : "sexbtn";
+    }
+    updateStatus();
+    toast((sex ? sexText(sex) : "全") + "：" + names.length + " 人");
+  }
+
+  elSexBox.addEventListener("click", function (e) {
+    if (e.target.tagName !== "BUTTON") return;
+    if (rolling) { toast("点名中，稍等一下"); return; }
+    setSex(e.target.getAttribute("data-sex") || "");
+  });
+
+  function sexCounts() { return " · 男 " + namesIn("m").length + " · 女 " + namesIn("f").length; }
 
   /* ---------------- 名单列表（只读） ---------------- */
 
@@ -569,26 +622,21 @@ var DEFAULT_COUNT = 1;
 
   function openList() {
     elListBody.innerHTML = "";
-    if (!names.length) {
-      var empty = document.createElement("div");
-      empty.className = "pempty";
-      empty.textContent = "名单为空，请在文件里填写 NAMES";
-      elListBody.appendChild(empty);
-      elListSub.textContent = "";
-    } else {
-      for (var i = 0; i < names.length; i++) {
-        var row = document.createElement("div");
-        row.className = "pitem";
-        var no = document.createElement("i");
-        no.textContent = String(i + 1);
-        var nm = document.createElement("b");
-        nm.textContent = names[i];
-        row.appendChild(no);
-        row.appendChild(nm);
-        elListBody.appendChild(row);
-      }
-      elListSub.textContent = "（共 " + names.length + " 人 · 只读）";
+    for (var i = 0; i < NAMES.length; i++) {
+      var row = document.createElement("div");
+      row.className = (sex && NAMES[i].sex !== sex) ? "pitem dim" : "pitem";
+      var no = document.createElement("i");
+      no.textContent = String(i + 1);
+      var nm = document.createElement("b");
+      nm.textContent = NAMES[i].name;
+      var sx = document.createElement("em");
+      sx.textContent = sexText(NAMES[i].sex);
+      row.appendChild(no);
+      row.appendChild(nm);
+      row.appendChild(sx);
+      elListBody.appendChild(row);
     }
+    elListSub.textContent = "（共 " + NAMES.length + " 人" + sexCounts() + " · 只读）";
     elListBody.scrollTop = 0;
     elListMask.classList.add("show");
   }
@@ -664,7 +712,8 @@ var DEFAULT_COUNT = 1;
       return;
     }
     if (e.code === "Space" || e.key === "Enter") {
-      if (e.target && e.target.id === "btnList") return;  // 让“列表”按钮自己响应回车/空格
+      // 按钮/复选框自己会用空格、回车，别抢它们的键
+      if (e.target && (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT")) return;
       e.preventDefault();
       start();
       return;
