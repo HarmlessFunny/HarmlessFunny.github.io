@@ -1,735 +1,881 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>点名器</title>
-<style>
-  :root{
-    --bg:#eef2f7;
-    --card:#ffffff;
-    --ink:#1f2937;
-    --muted:#6b7280;
-    --line:#d3dbe6;
-    --accent:#1f6feb;
-    --accent-d:#1554bb;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
-  body{
-    margin:0;
-    font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
-    background:var(--bg);
-    color:var(--ink);
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    touch-action:manipulation;
-    user-select:none;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>点名器</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #d3dbe6;
+      --accent: #1f6feb;
+      --accent-d: #1554bb;
+    }
 
-  /* ---------- 顶栏 ---------- */
-  header{
-    flex:0 0 auto;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    padding:10px 20px;
-    background:var(--card);
-    border-bottom:2px solid var(--line);
-  }
-  header h1{
-    font-size:22px;
-    margin:0;
-    font-weight:700;
-    letter-spacing:2px;
-  }
-  .tbtn{
-    font:inherit;
-    font-size:16px;
-    padding:8px 18px;
-    border:2px solid var(--line);
-    background:#fff;
-    color:var(--ink);
-    border-radius:10px;
-    cursor:pointer;
-  }
-  .tbtn:active{background:#e9eef6}
-  .tgroup{display:flex;gap:10px}
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent
+    }
 
-  /* ---------- 名单列表（只读） ---------- */
-  .mask{
-    position:fixed;
-    inset:0;
-    background:rgba(31,41,55,.45);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-    z-index:40;
-  }
-  .mask.show{display:flex}
-  .panel{
-    background:var(--card);
-    border-radius:18px;
-    width:min(1000px,100%);
-    max-height:min(82vh,780px);
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    box-shadow:0 18px 50px rgba(15,23,42,.3);
-  }
-  .phead{
-    flex:0 0 auto;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    padding:12px 18px;
-    border-bottom:2px solid var(--line);
-  }
-  .phead h2{font-size:20px;margin:0;font-weight:700;letter-spacing:1px}
-  .phead .sub{font-size:15px;font-weight:400;color:var(--muted);letter-spacing:0}
-  .plist{
-    flex:1 1 auto;
-    min-height:0;
-    overflow:auto;
-    padding:16px 18px 20px;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-    gap:8px 12px;
-    user-select:text;
-  }
-  .pitem{
-    display:flex;
-    align-items:baseline;
-    gap:8px;
-    font-size:19px;
-    line-height:1.4;
-    padding:6px 10px;
-    border:1px solid #e4ebf4;
-    border-radius:10px;
-    background:#f6f9fd;
-  }
-  .pitem.dim{opacity:.35}
-  .pitem i{
-    font-style:normal;
-    font-size:13px;
-    color:var(--muted);
-    min-width:24px;
-    text-align:right;
-    flex:0 0 auto;
-  }
-  .pitem b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pitem em{
-    font-style:normal;
-    font-size:13px;
-    line-height:1.5;
-    color:var(--muted);
-    background:#e9eef6;
-    border-radius:6px;
-    padding:0 6px;
-    flex:0 0 auto;
-  }
+    html,
+    body {
+      height: 100%
+    }
 
-  /* ---------- 结果区 ---------- */
-  main{
-    flex:1 1 auto;
-    min-height:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-    gap:10px;
-  }
-  .results{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:14px 30px;
-    width:100%;
-    text-align:center;
-  }
-  .name{
-    font-weight:800;
-    line-height:1.18;
-    letter-spacing:4px;
-    color:var(--accent);
-    padding:4px 10px;
-    border-radius:14px;
-    white-space:nowrap;
-    text-align:center;   /* 配合固定宽度：两字/三字都居中，不左右晃 */
-  }
-  .results.rolling .name{color:#94a3b8}
-  .results.done .name{color:#c2410c}
-  .status{
-    font-size:16px;
-    color:var(--muted);
-    letter-spacing:1px;
-    height:22px;
-  }
+    body {
+      margin: 0;
+      font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      /* ★ 老内核前缀 */
+      user-select: none;
+    }
 
-  /* 根据抽取人数自动调整字号 */
-  .results[data-n="1"] .name{font-size:clamp(60px,15vw,190px)}
-  .results[data-n="2"] .name,
-  .results[data-n="3"] .name,
-  .results[data-n="4"] .name{font-size:clamp(46px,9vw,120px)}
-  .results[data-n="5"] .name,
-  .results[data-n="6"] .name,
-  .results[data-n="7"] .name,
-  .results[data-n="8"] .name,
-  .results[data-n="9"] .name{font-size:clamp(34px,6vw,84px)}
-  .results[data-n="10"] .name,
-  .results[data-n="11"] .name,
-  .results[data-n="12"] .name{font-size:clamp(28px,4.6vw,64px)}
-  .results[data-n="many"] .name{font-size:clamp(22px,3.4vw,46px)}
+    /* ---------- 顶栏 ---------- */
+    header {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 20px;
+      background: var(--card);
+      border-bottom: 2px solid var(--line);
+    }
 
-  /* ---------- 底部操作区 ---------- */
-  footer{
-    flex:0 0 auto;
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:center;
-    gap:14px 22px;
-    padding:14px 20px 18px;
-    background:var(--card);
-    border-top:2px solid var(--line);
-  }
-  .countbox{
-    display:flex;
-    align-items:center;
-    border:2px solid var(--line);
-    border-radius:14px;
-    overflow:hidden;
-    background:#fff;
-  }
-  .countbox .step{
-    font:inherit;
-    font-size:30px;
-    font-weight:700;
-    line-height:1;
-    width:62px;
-    height:66px;
-    border:0;
-    background:#f1f5fa;
-    color:var(--accent);
-    cursor:pointer;
-  }
-  .countbox .step:active{background:#dde7f5}
-  .countbox .val{
-    width:112px;
-    height:66px;
-    display:flex;
-    align-items:baseline;
-    justify-content:center;
-    gap:4px;
-    font-size:34px;
-    font-weight:800;
-  }
-  .countbox .val small{font-size:16px;font-weight:400;color:var(--muted)}
+    header h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
 
-  /* ---------- 抽取范围（按性别） ---------- */
-  .sexbox{
-    display:flex;
-    align-items:center;
-    border:2px solid var(--line);
-    border-radius:14px;
-    overflow:hidden;
-    background:#fff;
-  }
-  .sexbtn{
-    font:inherit;
-    font-size:17px;
-    height:66px;
-    padding:0 18px;
-    border:0;
-    border-left:2px solid var(--line);
-    background:#fff;
-    color:var(--muted);
-    cursor:pointer;
-  }
-  .sexbtn:first-child{border-left:0}
-  .sexbtn:active{background:#eef2f7}
-  .sexbtn.on{background:var(--accent);color:#fff;font-weight:700}
+    .tbtn {
+      font: inherit;
+      font-size: 16px;
+      padding: 8px 18px;
+      border: 2px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 10px;
+      cursor: pointer;
+    }
 
-  .start{
-    font:inherit;
-    font-size:30px;
-    font-weight:800;
-    letter-spacing:6px;
-    color:#fff;
-    background:var(--accent);
-    border:0;
-    border-radius:16px;
-    padding:0 54px;
-    height:70px;
-    cursor:pointer;
-    box-shadow:0 4px 0 var(--accent-d);
-  }
-  .start:active{transform:translateY(2px);box-shadow:0 2px 0 var(--accent-d)}
-  .start:disabled{background:#9db8dd;box-shadow:0 4px 0 #7f9dc4}
+    .tbtn:active {
+      background: #e9eef6
+    }
 
-  .opt{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    font-size:17px;
-    padding:10px 14px;
-    border:2px solid var(--line);
-    border-radius:12px;
-    background:#fff;
-    cursor:pointer;
-  }
-  .opt input{width:22px;height:22px;accent-color:var(--accent);margin:0}
-  .ghost{
-    font:inherit;
-    font-size:16px;
-    padding:12px 18px;
-    border:2px solid var(--line);
-    border-radius:12px;
-    background:#fff;
-    color:var(--muted);
-    cursor:pointer;
-  }
-  .ghost:active{background:#f1f5fa}
+    .tgroup {
+      display: flex;
+      gap: 10px
+    }
 
-  /* ---------- 提示条 ---------- */
-  .toast{
-    position:fixed;
-    left:50%;
-    bottom:110px;
-    transform:translateX(-50%);
-    background:rgba(31,41,55,.92);
-    color:#fff;
-    font-size:17px;
-    padding:12px 24px;
-    border-radius:12px;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .2s;
-    z-index:30;
-  }
-  .toast.show{opacity:1}
-</style>
+    /* ---------- 名单列表（只读） ---------- */
+    .mask {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      /* ★ 原 inset:0，老内核不支持 */
+      background: rgba(31, 41, 55, .45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 40;
+    }
+
+    .mask.show {
+      display: flex
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 18px;
+      width: 1000px;
+      /* ★ 兜底：老内核用这个 */
+      max-width: 100%;
+      /* ★ 兜底：小屏时不超出 */
+      width: min(1000px, 100%);
+      /* 新内核覆盖上面两行 */
+      max-height: 82vh;
+      /* ★ 兜底 */
+      max-height: min(82vh, 780px);
+      /* 新内核覆盖 */
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, .3);
+    }
+
+    .phead {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .phead h2 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 1px
+    }
+
+    .phead .sub {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: 0
+    }
+
+    .plist {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      padding: 16px 18px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px 12px;
+      -webkit-user-select: text;
+      /* ★ */
+      user-select: text;
+    }
+
+    .pitem {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 19px;
+      line-height: 1.4;
+      padding: 6px 10px;
+      border: 1px solid #e4ebf4;
+      border-radius: 10px;
+      background: #f6f9fd;
+    }
+
+    .pitem.dim {
+      opacity: .35
+    }
+
+    .pitem i {
+      font-style: normal;
+      font-size: 13px;
+      color: var(--muted);
+      min-width: 24px;
+      text-align: right;
+      flex: 0 0 auto;
+    }
+
+    .pitem b {
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap
+    }
+
+    .pitem em {
+      font-style: normal;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+      background: #e9eef6;
+      border-radius: 6px;
+      padding: 0 6px;
+      flex: 0 0 auto;
+    }
+
+    /* ---------- 结果区 ---------- */
+    main {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      gap: 10px;
+    }
+
+    .results {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 14px 30px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .name {
+      font-weight: 800;
+      line-height: 1.18;
+      letter-spacing: 4px;
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 14px;
+      white-space: nowrap;
+      text-align: center;
+      /* 配合固定宽度：两字/三字都居中，不左右晃 */
+    }
+
+    .results.rolling .name {
+      color: #94a3b8
+    }
+
+    .results.done .name {
+      color: #c2410c
+    }
+
+    .status {
+      font-size: 16px;
+      color: var(--muted);
+      letter-spacing: 1px;
+      height: 22px;
+    }
+
+    /* 根据抽取人数自动调整字号
+         每档先写固定值（老浏览器兜底），再写 clamp()（新浏览器覆盖） */
+    .results[data-n="1"] .name {
+      font-size: 190px;
+      /* ★ 兜底 */
+      font-size: clamp(60px, 15vw, 190px);
+    }
+
+    .results[data-n="2"] .name,
+    .results[data-n="3"] .name,
+    .results[data-n="4"] .name {
+      font-size: 120px;
+      /* ★ 兜底 */
+      font-size: clamp(46px, 9vw, 120px);
+    }
+
+    .results[data-n="5"] .name,
+    .results[data-n="6"] .name,
+    .results[data-n="7"] .name,
+    .results[data-n="8"] .name,
+    .results[data-n="9"] .name {
+      font-size: 84px;
+      /* ★ 兜底 */
+      font-size: clamp(34px, 6vw, 84px);
+    }
+
+    .results[data-n="10"] .name,
+    .results[data-n="11"] .name,
+    .results[data-n="12"] .name {
+      font-size: 64px;
+      /* ★ 兜底 */
+      font-size: clamp(28px, 4.6vw, 64px);
+    }
+
+    .results[data-n="many"] .name {
+      font-size: 46px;
+      /* ★ 兜底 */
+      font-size: clamp(22px, 3.4vw, 46px);
+    }
+
+    /* ---------- 底部操作区 ---------- */
+    footer {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 14px 22px;
+      padding: 14px 20px 18px;
+      background: var(--card);
+      border-top: 2px solid var(--line);
+    }
+
+    .countbox {
+      display: flex;
+      align-items: center;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .countbox .step {
+      font: inherit;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1;
+      width: 62px;
+      height: 66px;
+      border: 0;
+      background: #f1f5fa;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .countbox .step:active {
+      background: #dde7f5
+    }
+
+    .countbox .val {
+      width: 112px;
+      height: 66px;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 4px;
+      font-size: 34px;
+      font-weight: 800;
+    }
+
+    .countbox .val small {
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--muted)
+    }
+
+    /* ---------- 抽取范围（按性别） ---------- */
+    .sexbox {
+      display: flex;
+      align-items: center;
+      border: 2px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .sexbtn {
+      font: inherit;
+      font-size: 17px;
+      height: 66px;
+      padding: 0 18px;
+      border: 0;
+      border-left: 2px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .sexbtn:first-child {
+      border-left: 0
+    }
+
+    .sexbtn:active {
+      background: #eef2f7
+    }
+
+    .sexbtn.on {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700
+    }
+
+    .start {
+      font: inherit;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      color: #fff;
+      background: var(--accent);
+      border: 0;
+      border-radius: 16px;
+      padding: 0 54px;
+      height: 70px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 var(--accent-d);
+    }
+
+    .start:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 var(--accent-d)
+    }
+
+    .start:disabled {
+      background: #9db8dd;
+      box-shadow: 0 4px 0 #7f9dc4
+    }
+
+    .opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 17px;
+      padding: 10px 14px;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .opt input {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--accent);
+      margin: 0
+    }
+
+    .ghost {
+      font: inherit;
+      font-size: 16px;
+      padding: 12px 18px;
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .ghost:active {
+      background: #f1f5fa
+    }
+
+    /* ---------- 提示条 ---------- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 110px;
+      transform: translateX(-50%);
+      background: rgba(31, 41, 55, .92);
+      color: #fff;
+      font-size: 17px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+      z-index: 30;
+    }
+
+    .toast.show {
+      opacity: 1
+    }
+  </style>
 </head>
+
 <body>
 
-<header>
-  <h1>点 名 器</h1>
-  <div class="tgroup">
-    <button class="tbtn" id="btnList">列表</button>
-    <button class="tbtn" id="btnFull">全屏</button>
-  </div>
-</header>
-
-<main>
-  <div class="results" id="results" data-n="1">
-    <div class="name">准备开始</div>
-  </div>
-  <div class="status" id="status"></div>
-</main>
-
-<footer>
-  <div class="sexbox" id="sexBox">
-    <button class="sexbtn on" data-sex="">全</button>
-    <button class="sexbtn" data-sex="m">男</button>
-    <button class="sexbtn" data-sex="f">女</button>
-  </div>
-
-  <div class="countbox">
-    <button class="step" id="minus" aria-label="减少人数">−</button>
-    <div class="val"><span id="cnt">1</span><small>人</small></div>
-    <button class="step" id="plus" aria-label="增加人数">+</button>
-  </div>
-
-  <button class="start" id="btnStart">开 始 点 名</button>
-
-  <label class="opt"><input type="checkbox" id="norepeat">不重复抽取</label>
-  <button class="ghost" id="btnReset">重置记录</button>
-</footer>
-
-<div class="toast" id="toast"></div>
-
-<!-- 名单列表：只读，点右上角“列表”打开 -->
-<div class="mask" id="listMask">
-  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="listTitle">
-    <div class="phead">
-      <h2 id="listTitle">名单列表 <span class="sub" id="listSub"></span></h2>
-      <button class="tbtn" id="btnListClose">关闭</button>
+  <header>
+    <h1>点 名 器</h1>
+    <div class="tgroup">
+      <button class="tbtn" id="btnList">列表</button>
+      <button class="tbtn" id="btnFull">全屏</button>
     </div>
-    <div class="plist" id="listBody"></div>
+  </header>
+
+  <main>
+    <div class="results" id="results" data-n="1">
+      <div class="name">准备开始</div>
+    </div>
+    <div class="status" id="status"></div>
+  </main>
+
+  <footer>
+    <div class="sexbox" id="sexBox">
+      <button class="sexbtn on" data-sex="">全</button>
+      <button class="sexbtn" data-sex="m">男</button>
+      <button class="sexbtn" data-sex="f">女</button>
+    </div>
+
+    <div class="countbox">
+      <button class="step" id="minus" aria-label="减少人数">−</button>
+      <div class="val"><span id="cnt">1</span><small>人</small></div>
+      <button class="step" id="plus" aria-label="增加人数">+</button>
+    </div>
+
+    <button class="start" id="btnStart">开 始 点 名</button>
+
+    <label class="opt"><input type="checkbox" id="norepeat">不重复抽取</label>
+    <button class="ghost" id="btnReset">重置记录</button>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- 名单列表：只读，点右上角“列表”打开 -->
+  <div class="mask" id="listMask">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="listTitle">
+      <div class="phead">
+        <h2 id="listTitle">名单列表 <span class="sub" id="listSub"></span></h2>
+        <button class="tbtn" id="btnListClose">关闭</button>
+      </div>
+      <div class="plist" id="listBody"></div>
+    </div>
   </div>
-</div>
 
-<script>
-/* =======================================================================
-   名单在这里改：一人一行，写成 {name:"姓名",sex:"性别"}，行尾加英文逗号。
-   名字不需要按顺序，改完保存文件、刷新页面即可。姓名里可以有空格。
-   ======================================================================= */
-var NAMES = [
-  {name:"任超",sex:"m"}, {name:"李欣洁",sex:"f"}, {name:"肖雄博",sex:"m"}, {name:"赵子涵",sex:"f"}, {name:"冯梓尧",sex:"f"},
-  {name:"薛煜祺",sex:"m"}, {name:"秦浩",sex:"m"}, {name:"管鑫瑞",sex:"f"}, {name:"续珂涵",sex:"f"}, {name:"韩高",sex:"m"},
-  {name:"李奕",sex:"m"}, {name:"张堉楠",sex:"f"}, {name:"李宜珈",sex:"f"}, {name:"朱禹丞",sex:"m"}, {name:"李佳麟",sex:"m"},
-  {name:"石可欣",sex:"f"}, {name:"史沂轩",sex:"f"}, {name:"王严卿",sex:"m"}, {name:"赵俊杰",sex:"m"}, {name:"张语凡",sex:"f"},
-  {name:"莫森",sex:"m"}, {name:"袁心怡",sex:"f"}, {name:"刘珍源",sex:"f"}, {name:"孙歌",sex:"m"}, {name:"董峻熙",sex:"m"},
-  {name:"温佳欣",sex:"f"}, {name:"柳颎婷",sex:"f"}, {name:"白轩",sex:"m"}, {name:"王涵",sex:"m"}, {name:"杨奎",sex:"f"},
-  {name:"庞诗颖",sex:"f"}, {name:"纪满烨",sex:"m"}, {name:"李穆宸",sex:"m"}, {name:"邢迪扉",sex:"f"}, {name:"尚钰杰",sex:"m"},
-  {name:"李林泽",sex:"f"}, {name:"张誉轩",sex:"m"}, {name:"陈渲",sex:"f"}, {name:"武文涛",sex:"m"}, {name:"王毓斐",sex:"f"},
-  {name:"张洋",sex:"m"}, {name:"王馨怡",sex:"f"}, {name:"政柏羽",sex:"m"}, {name:"陈伊珂",sex:"f"}, {name:"霍晨曦",sex:"f"},
-  {name:"孙天宇",sex:"m"}, {name:"史鹏捷",sex:"m"}, {name:"张子悦",sex:"f"}, {name:"何洋",sex:"m"}, {name:"张嘉怡",sex:"f"},
-  {name:"李子阳",sex:"m"}, {name:"何若蓓",sex:"f"}, {name:"郝文璇",sex:"f"}, {name:"王思诺",sex:"m"}, {name:"王子涵",sex:"m"},
-  {name:"郭南雁",sex:"f"}, {name:"王思涵",sex:"f"}, {name:"侯佳钧",sex:"m"}, {name:"贺乙轩",sex:"f"}, {name:"高煊",sex:"m"},
-  {name:"王然",sex:"f"}
-];
+  <script>
+    /* =======================================================================
+       名单在这里改：一人一行，写成 {name:"姓名",sex:"性别"}，行尾加英文逗号。
+       名字不需要按顺序，改完保存文件、刷新页面即可。姓名里可以有空格。
+       ======================================================================= */
+    var NAMES = [
+      { name: "任超", sex: "m" }, { name: "李欣洁", sex: "f" }, { name: "肖雄博", sex: "m" }, { name: "赵子涵", sex: "f" }, { name: "冯梓尧", sex: "f" },
+      { name: "薛煜祺", sex: "m" }, { name: "秦浩", sex: "m" }, { name: "管鑫瑞", sex: "f" }, { name: "续珂涵", sex: "f" }, { name: "韩高", sex: "m" },
+      { name: "李奕", sex: "m" }, { name: "张堉楠", sex: "f" }, { name: "李宜珈", sex: "f" }, { name: "朱禹丞", sex: "m" }, { name: "李佳麟", sex: "m" },
+      { name: "石可欣", sex: "f" }, { name: "史沂轩", sex: "f" }, { name: "王严卿", sex: "m" }, { name: "赵俊杰", sex: "m" }, { name: "张语凡", sex: "f" },
+      { name: "莫森", sex: "m" }, { name: "袁心怡", sex: "f" }, { name: "刘珍源", sex: "f" }, { name: "孙歌", sex: "m" }, { name: "董峻熙", sex: "m" },
+      { name: "温佳欣", sex: "f" }, { name: "柳颎婷", sex: "f" }, { name: "白轩", sex: "m" }, { name: "王涵", sex: "m" }, { name: "杨奎", sex: "f" },
+      { name: "庞诗颖", sex: "f" }, { name: "纪满烨", sex: "m" }, { name: "李穆宸", sex: "m" }, { name: "邢迪扉", sex: "f" }, { name: "尚钰杰", sex: "m" },
+      { name: "李林泽", sex: "f" }, { name: "张誉轩", sex: "m" }, { name: "陈渲", sex: "f" }, { name: "武文涛", sex: "m" }, { name: "王毓斐", sex: "f" },
+      { name: "张洋", sex: "m" }, { name: "王馨怡", sex: "f" }, { name: "政柏羽", sex: "m" }, { name: "陈伊珂", sex: "f" }, { name: "霍晨曦", sex: "f" },
+      { name: "孙天宇", sex: "m" }, { name: "史鹏捷", sex: "m" }, { name: "张子悦", sex: "f" }, { name: "何洋", sex: "m" }, { name: "张嘉怡", sex: "f" },
+      { name: "李子阳", sex: "m" }, { name: "何若蓓", sex: "f" }, { name: "郝文璇", sex: "f" }, { name: "王思诺", sex: "m" }, { name: "王子涵", sex: "m" },
+      { name: "郭南雁", sex: "f" }, { name: "王思涵", sex: "f" }, { name: "侯佳钧", sex: "m" }, { name: "贺乙轩", sex: "f" }, { name: "高煊", sex: "m" },
+      { name: "王然", sex: "f" }
+    ];
 
-/* 打开页面时默认抽几个人（页面上随时可改） */
-var DEFAULT_COUNT = 1;
-/* ======================================================================= */
+    /* 打开页面时默认抽几个人（页面上随时可改） */
+    var DEFAULT_COUNT = 1;
+    /* ======================================================================= */
 
-(function () {
-  "use strict";
+    (function () {
+      "use strict";
 
-  var $ = function (id) { return document.getElementById(id); };
-  var elResults = $("results");
-  var elStatus = $("status");
-  var elCnt = $("cnt");
-  var elNoRepeat = $("norepeat");
-  var elStart = $("btnStart");
-  var elToast = $("toast");
-  var elSexBox = $("sexBox");
+      var $ = function (id) { return document.getElementById(id); };
+      var elResults = $("results");
+      var elStatus = $("status");
+      var elCnt = $("cnt");
+      var elNoRepeat = $("norepeat");
+      var elStart = $("btnStart");
+      var elToast = $("toast");
+      var elSexBox = $("sexBox");
 
-  function sexText(s) { return s === "m" ? "男" : "女"; }
+      function sexText(s) { return s === "m" ? "男" : "女"; }
 
-  var sex = "";   // ""=全部，"m"=男，"f"=女
+      var sex = "";   // ""=全部，"m"=男，"f"=女
 
-  function namesIn(v) {
-    var out = [];
-    for (var i = 0; i < NAMES.length; i++) {
-      if (!v || NAMES[i].sex === v) out.push(NAMES[i].name);
-    }
-    return out;
-  }
-
-  var names = namesIn(sex);   // 当前抽取范围内的名字
-  var pool = names.slice();   // 不重复模式下的剩余名单
-  var count = 1;
-  var rolling = false;
-  var timers = [];
-  var toastTimer = null;
-
-  /* ---------------- 工具 ---------------- */
-
-  function toast(msg) {
-    elToast.textContent = msg;
-    elToast.classList.add("show");
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { elToast.classList.remove("show"); }, 1800);
-  }
-
-  function maxCount() { return Math.max(1, Math.min(60, names.length)); }
-
-  function setCount(v) {
-    v = parseInt(v, 10);
-    if (isNaN(v)) v = 1;
-    count = Math.max(1, Math.min(maxCount(), v));
-    elCnt.textContent = String(count);
-  }
-
-  function sizeKey(n) {
-    if (n <= 1) return "1";
-    if (n <= 12) return String(n);
-    return "many";
-  }
-
-  function renderNames(list, n) {
-    elResults.setAttribute("data-n", sizeKey(n));
-    elResults.innerHTML = "";
-    for (var i = 0; i < list.length; i++) {
-      var d = document.createElement("div");
-      d.className = "name";
-      d.textContent = list[i];
-      elResults.appendChild(d);
-    }
-  }
-
-  /* ---- 固定格子宽度：按最长的姓名量一次，两字/三字都占同样宽，滚动时整行不会乱抖 ---- */
-  var meas = document.createElement("div");
-  meas.className = "results";
-  meas.style.cssText = "position:absolute;left:-99999px;top:0;width:auto;visibility:hidden;pointer-events:none;";
-  var measName = document.createElement("div");
-  measName.className = "name";
-  meas.appendChild(measName);
-  document.body.appendChild(meas);
-
-  var slotW = 0;   // 当前字号下每个格子的固定宽度（px）；0 表示还没定位（占位状态）
-  var curN = 1;    // 当前字号档位
-
-  function measureSlotWidth(n) {
-    meas.setAttribute("data-n", sizeKey(n));
-    var w = 0;
-    for (var i = 0; i < NAMES.length; i++) {
-      measName.textContent = NAMES[i].name;
-      var x = measName.getBoundingClientRect().width;
-      if (x > w) w = x;
-    }
-    return Math.ceil(w);
-  }
-
-  function applySlotWidth(n) {
-    curN = n;
-    slotW = measureSlotWidth(n);
-    syncSlotWidth();
-  }
-
-  function syncSlotWidth() {
-    if (!slotW) return;
-    var nodes = elResults.querySelectorAll(".name");
-    for (var i = 0; i < nodes.length; i++) nodes[i].style.width = slotW + "px";
-  }
-
-  function updateStatus(extra) {
-    if (extra) { elStatus.textContent = extra; return; }
-    var base = sex
-      ? sexText(sex) + " " + names.length + " 人　·　名单共 " + NAMES.length + " 人"
-      : "名单共 " + NAMES.length + " 人";
-    if (elNoRepeat.checked) base += "　·　剩余 " + pool.length + " 人";
-    elStatus.textContent = base;
-  }
-
-  function randomOf(arr) { return arr[(Math.random() * arr.length) | 0]; }
-
-  function shuffle(arr) {
-    var a = arr.slice();
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = (Math.random() * (i + 1)) | 0;
-      var t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
-
-  /* ---------------- 抽取 ---------------- */
-
-  function pickWinners(n) {
-    if (elNoRepeat.checked) {
-      if (pool.length < n) {
-        pool = names.slice();
-        toast("剩余人数不足，已重置抽取记录");
+      function namesIn(v) {
+        var out = [];
+        for (var i = 0; i < NAMES.length; i++) {
+          if (!v || NAMES[i].sex === v) out.push(NAMES[i].name);
+        }
+        return out;
       }
-      var w = shuffle(pool).slice(0, n);
-      var set = {};
-      for (var i = 0; i < w.length; i++) set[w[i]] = 1;
-      pool = pool.filter(function (x) { return !set[x]; });
-      return w;
-    }
-    return shuffle(names).slice(0, n);
-  }
 
-  function start() {
-    if (rolling || !names.length) return;
-    if (count > names.length) setCount(names.length);
+      var names = namesIn(sex);   // 当前抽取范围内的名字
+      var pool = names.slice();   // 不重复模式下的剩余名单
+      var count = 1;
+      var rolling = false;
+      var timers = [];
+      var toastTimer = null;
 
-    var winners = pickWinners(count);
+      /* ---------------- 工具 ---------------- */
 
-    rolling = true;
-    elStart.disabled = true;
-    timers.forEach(clearInterval);
-    timers = [];
+      function toast(msg) {
+        elToast.textContent = msg;
+        elToast.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { elToast.classList.remove("show"); }, 1800);
+      }
 
-    elResults.className = "results rolling";
-    elResults.setAttribute("data-n", sizeKey(count));
+      function maxCount() { return Math.max(1, Math.min(61, names.length)); }
 
-    var blanks = [];
-    for (var b = 0; b < count; b++) blanks.push(randomOf(names));
-    renderNames(blanks, count);
-    applySlotWidth(count);
-    updateStatus("抽取中…");
+      function setCount(v) {
+        v = parseInt(v, 10);
+        if (isNaN(v)) v = 1;
+        count = Math.max(1, Math.min(maxCount(), v));
+        elCnt.textContent = String(count);
+      }
 
-    var nodes = elResults.querySelectorAll(".name");
-    var baseDelay = 620;
-    var stepDelay = count > 6 ? 60 : 140;
+      function sizeKey(n) {
+        if (n <= 1) return "1";
+        if (n <= 12) return String(n);
+        return "many";
+      }
 
-    for (var i = 0; i < count; i++) {
-      (function (idx) {
-        var spin = setInterval(function () {
-          nodes[idx].textContent = randomOf(names);
-        }, 55);
-        timers.push(spin);
+      function renderNames(list, n) {
+        elResults.setAttribute("data-n", sizeKey(n));
+        elResults.innerHTML = "";
+        for (var i = 0; i < list.length; i++) {
+          var d = document.createElement("div");
+          d.className = "name";
+          d.textContent = list[i];
+          elResults.appendChild(d);
+        }
+      }
 
-        setTimeout(function () {
-          clearInterval(spin);
-          var slow = [90, 140, 210];
-          var k = 0;
-          (function tick() {
-            if (k < slow.length) {
+      /* ---- 固定格子宽度：按最长的姓名量一次，两字/三字都占同样宽，滚动时整行不会乱抖 ---- */
+      var meas = document.createElement("div");
+      meas.className = "results";
+      meas.style.cssText = "position:absolute;left:-99999px;top:0;width:auto;visibility:hidden;pointer-events:none;";
+      var measName = document.createElement("div");
+      measName.className = "name";
+      meas.appendChild(measName);
+      document.body.appendChild(meas);
+
+      var slotW = 0;   // 当前字号下每个格子的固定宽度（px）；0 表示还没定位（占位状态）
+      var curN = 1;    // 当前字号档位
+
+      function measureSlotWidth(n) {
+        meas.setAttribute("data-n", sizeKey(n));
+        var w = 0;
+        for (var i = 0; i < NAMES.length; i++) {
+          measName.textContent = NAMES[i].name;
+          var x = measName.getBoundingClientRect().width;
+          if (x > w) w = x;
+        }
+        return Math.ceil(w);
+      }
+
+      function applySlotWidth(n) {
+        curN = n;
+        slotW = measureSlotWidth(n);
+        syncSlotWidth();
+      }
+
+      function syncSlotWidth() {
+        if (!slotW) return;
+        var nodes = elResults.querySelectorAll(".name");
+        for (var i = 0; i < nodes.length; i++) nodes[i].style.width = slotW + "px";
+      }
+
+      function updateStatus(extra) {
+        if (extra) { elStatus.textContent = extra; return; }
+        var base = sex
+          ? sexText(sex) + " " + names.length + " 人　·　名单共 " + NAMES.length + " 人"
+          : "名单共 " + NAMES.length + " 人";
+        if (elNoRepeat.checked) base += "　·　剩余 " + pool.length + " 人";
+        elStatus.textContent = base;
+      }
+
+      function randomOf(arr) { return arr[(Math.random() * arr.length) | 0]; }
+
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = (Math.random() * (i + 1)) | 0;
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+
+      /* ---------------- 抽取 ---------------- */
+
+      function pickWinners(n) {
+        if (elNoRepeat.checked) {
+          if (pool.length < n) {
+            pool = names.slice();
+            toast("剩余人数不足，已重置抽取记录");
+          }
+          var w = shuffle(pool).slice(0, n);
+          var set = {};
+          for (var i = 0; i < w.length; i++) set[w[i]] = 1;
+          pool = pool.filter(function (x) { return !set[x]; });
+          return w;
+        }
+        return shuffle(names).slice(0, n);
+      }
+
+      function start() {
+        if (rolling || !names.length) return;
+        if (count > names.length) setCount(names.length);
+
+        var winners = pickWinners(count);
+
+        rolling = true;
+        elStart.disabled = true;
+        timers.forEach(clearInterval);
+        timers = [];
+
+        elResults.className = "results rolling";
+        elResults.setAttribute("data-n", sizeKey(count));
+
+        var blanks = [];
+        for (var b = 0; b < count; b++) blanks.push(randomOf(names));
+        renderNames(blanks, count);
+        applySlotWidth(count);
+        updateStatus("抽取中…");
+
+        var nodes = elResults.querySelectorAll(".name");
+        var baseDelay = 620;
+        var stepDelay = count > 6 ? 60 : 140;
+
+        for (var i = 0; i < count; i++) {
+          (function (idx) {
+            var spin = setInterval(function () {
               nodes[idx].textContent = randomOf(names);
-              setTimeout(tick, slow[k++]);
-            } else {
-              nodes[idx].textContent = winners[idx];
-              if (idx === count - 1) finish(winners);
-            }
-          })();
-        }, baseDelay + idx * stepDelay);
-      })(i);
-    }
-  }
+            }, 55);
+            timers.push(spin);
 
-  function finish(winners) {
-    rolling = false;
-    elStart.disabled = false;
-    elResults.className = "results done";
-    renderNames(winners, winners.length);
-    elResults.setAttribute("data-n", sizeKey(winners.length));
-    syncSlotWidth();
-    // 抽完把「xx 人 · 剩余 xx 人」显示回来（抽中的人就在屏幕上了）
-    updateStatus();
-  }
-
-  /* ---------------- 抽取范围（按性别，按钮写在 HTML 里） ---------------- */
-
-  function setSex(v) {
-    if (v === sex) return;
-    sex = v;
-    names = namesIn(sex);
-    pool = names.slice();          // 换了范围，不重复抽取的记录也重新开始
-    setCount(count);
-    var bs = elSexBox.children;
-    for (var i = 0; i < bs.length; i++) {
-      bs[i].className = (bs[i].getAttribute("data-sex") || "") === sex ? "sexbtn on" : "sexbtn";
-    }
-    updateStatus();
-    toast((sex ? sexText(sex) : "全") + "：" + names.length + " 人");
-  }
-
-  elSexBox.addEventListener("click", function (e) {
-    if (e.target.tagName !== "BUTTON") return;
-    if (rolling) { toast("点名中，稍等一下"); return; }
-    setSex(e.target.getAttribute("data-sex") || "");
-  });
-
-  function sexCounts() { return " · 男 " + namesIn("m").length + " · 女 " + namesIn("f").length; }
-
-  /* ---------------- 名单列表（只读） ---------------- */
-
-  var elListMask = $("listMask");
-  var elListBody = $("listBody");
-  var elListSub = $("listSub");
-
-  function listOpen() { return elListMask.classList.contains("show"); }
-
-  function openList() {
-    elListBody.innerHTML = "";
-    for (var i = 0; i < NAMES.length; i++) {
-      var row = document.createElement("div");
-      row.className = (sex && NAMES[i].sex !== sex) ? "pitem dim" : "pitem";
-      var no = document.createElement("i");
-      no.textContent = String(i + 1);
-      var nm = document.createElement("b");
-      nm.textContent = NAMES[i].name;
-      var sx = document.createElement("em");
-      sx.textContent = sexText(NAMES[i].sex);
-      row.appendChild(no);
-      row.appendChild(nm);
-      row.appendChild(sx);
-      elListBody.appendChild(row);
-    }
-    elListSub.textContent = "（共 " + NAMES.length + " 人" + sexCounts() + " · 只读）";
-    elListBody.scrollTop = 0;
-    elListMask.classList.add("show");
-  }
-
-  function closeList() { elListMask.classList.remove("show"); }
-
-  $("btnList").addEventListener("click", function () {
-    if (listOpen()) closeList(); else openList();
-  });
-  $("btnListClose").addEventListener("click", closeList);
-  elListMask.addEventListener("click", function (e) {
-    if (e.target === elListMask) closeList();   // 点空白处关闭
-  });
-
-  /* ---------------- 事件 ---------------- */
-
-  $("plus").addEventListener("click", function () {
-    if (rolling) return;
-    setCount(count + 1);
-    updateStatus();
-  });
-  $("minus").addEventListener("click", function () {
-    if (rolling) return;
-    setCount(count - 1);
-    updateStatus();
-  });
-
-  // 双击人数可手动输入
-  elCnt.parentNode.addEventListener("dblclick", function () {
-    var v = prompt("抽取人数（1 - " + maxCount() + "）：", String(count));
-    if (v === null) return;
-    setCount(v);
-    updateStatus();
-  });
-
-  elStart.addEventListener("click", start);
-
-  elNoRepeat.addEventListener("change", function () {
-    pool = names.slice();
-    updateStatus();
-  });
-
-  $("btnReset").addEventListener("click", function () {
-    pool = names.slice();
-    updateStatus();
-    toast("已重置抽取记录");
-  });
-
-  $("btnFull").addEventListener("click", function () {
-    if (!document.fullscreenElement) {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
+            setTimeout(function () {
+              clearInterval(spin);
+              var slow = [90, 140, 210];
+              var k = 0;
+              (function tick() {
+                if (k < slow.length) {
+                  nodes[idx].textContent = randomOf(names);
+                  setTimeout(tick, slow[k++]);
+                } else {
+                  nodes[idx].textContent = winners[idx];
+                  if (idx === count - 1) finish(winners);
+                }
+              })();
+            }, baseDelay + idx * stepDelay);
+          })(i);
+        }
       }
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
-  });
 
-  // 窗口大小变化时字号会变，重新量一次格子宽度
-  var rzTimer = null;
-  window.addEventListener("resize", function () {
-    if (rzTimer) clearTimeout(rzTimer);
-    rzTimer = setTimeout(function () {
-      if (!slotW) return;          // 还在“准备开始”占位状态，不用管
-      applySlotWidth(curN);
-    }, 150);
-  });
+      function finish(winners) {
+        rolling = false;
+        elStart.disabled = false;
+        elResults.className = "results done";
+        renderNames(winners, winners.length);
+        elResults.setAttribute("data-n", sizeKey(winners.length));
+        syncSlotWidth();
+        // 抽完把「xx 人 · 剩余 xx 人」显示回来（抽中的人就在屏幕上了）
+        updateStatus();
+      }
 
-  document.addEventListener("keydown", function (e) {
-    // 列表打开时：只响应 Esc 关闭，不触发点名
-    if (listOpen()) {
-      if (e.key === "Escape") { e.preventDefault(); closeList(); }
-      return;
-    }
-    if (e.code === "Space" || e.key === "Enter") {
-      // 按钮/复选框自己会用空格、回车，别抢它们的键
-      if (e.target && (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT")) return;
-      e.preventDefault();
-      start();
-      return;
-    }
-    if (e.key === "+" || e.key === "=" || e.key === "ArrowUp") {
-      e.preventDefault(); setCount(count + 1); updateStatus();
-    } else if (e.key === "-" || e.key === "_" || e.key === "ArrowDown") {
-      e.preventDefault(); setCount(count - 1); updateStatus();
-    }
-  });
+      /* ---------------- 抽取范围（按性别，按钮写在 HTML 里） ---------------- */
 
-  /* ---------------- 启动 ---------------- */
-  setCount(DEFAULT_COUNT);
-  renderNames(["准备开始"], 1);
-  updateStatus();
-})();
-</script>
+      function setSex(v) {
+        if (v === sex) return;
+        sex = v;
+        names = namesIn(sex);
+        pool = names.slice();          // 换了范围，不重复抽取的记录也重新开始
+        setCount(count);
+        var bs = elSexBox.children;
+        for (var i = 0; i < bs.length; i++) {
+          bs[i].className = (bs[i].getAttribute("data-sex") || "") === sex ? "sexbtn on" : "sexbtn";
+        }
+        updateStatus();
+        toast((sex ? sexText(sex) : "全") + "：" + names.length + " 人");
+      }
+
+      elSexBox.addEventListener("click", function (e) {
+        if (e.target.tagName !== "BUTTON") return;
+        if (rolling) { toast("点名中，稍等一下"); return; }
+        setSex(e.target.getAttribute("data-sex") || "");
+      });
+
+      function sexCounts() { return " · 男 " + namesIn("m").length + " · 女 " + namesIn("f").length; }
+
+      /* ---------------- 名单列表（只读） ---------------- */
+
+      var elListMask = $("listMask");
+      var elListBody = $("listBody");
+      var elListSub = $("listSub");
+
+      function listOpen() { return elListMask.classList.contains("show"); }
+
+      function openList() {
+        elListBody.innerHTML = "";
+        for (var i = 0; i < NAMES.length; i++) {
+          var row = document.createElement("div");
+          row.className = (sex && NAMES[i].sex !== sex) ? "pitem dim" : "pitem";
+          var no = document.createElement("i");
+          no.textContent = String(i + 1);
+          var nm = document.createElement("b");
+          nm.textContent = NAMES[i].name;
+          var sx = document.createElement("em");
+          sx.textContent = sexText(NAMES[i].sex);
+          row.appendChild(no);
+          row.appendChild(nm);
+          row.appendChild(sx);
+          elListBody.appendChild(row);
+        }
+        elListSub.textContent = "（共 " + NAMES.length + " 人" + sexCounts() + " · 只读）";
+        elListBody.scrollTop = 0;
+        elListMask.classList.add("show");
+      }
+
+      function closeList() { elListMask.classList.remove("show"); }
+
+      $("btnList").addEventListener("click", function () {
+        if (listOpen()) closeList(); else openList();
+      });
+      $("btnListClose").addEventListener("click", closeList);
+      elListMask.addEventListener("click", function (e) {
+        if (e.target === elListMask) closeList();   // 点空白处关闭
+      });
+
+      /* ---------------- 事件 ---------------- */
+
+      $("plus").addEventListener("click", function () {
+        if (rolling) return;
+        setCount(count + 1);
+        updateStatus();
+      });
+      $("minus").addEventListener("click", function () {
+        if (rolling) return;
+        setCount(count - 1);
+        updateStatus();
+      });
+
+      // 双击人数可手动输入
+      elCnt.parentNode.addEventListener("dblclick", function () {
+        var v = prompt("抽取人数（1 - " + maxCount() + "）：", String(count));
+        if (v === null) return;
+        setCount(v);
+        updateStatus();
+      });
+
+      elStart.addEventListener("click", start);
+
+      elNoRepeat.addEventListener("change", function () {
+        pool = names.slice();
+        updateStatus();
+      });
+
+      $("btnReset").addEventListener("click", function () {
+        pool = names.slice();
+        updateStatus();
+        toast("已重置抽取记录");
+      });
+
+      $("btnFull").addEventListener("click", function () {
+        if (!document.fullscreenElement) {
+          if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+          }
+        } else if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      });
+
+      // 窗口大小变化时字号会变，重新量一次格子宽度
+      var rzTimer = null;
+      window.addEventListener("resize", function () {
+        if (rzTimer) clearTimeout(rzTimer);
+        rzTimer = setTimeout(function () {
+          if (!slotW) return;          // 还在“准备开始”占位状态，不用管
+          applySlotWidth(curN);
+        }, 150);
+      });
+
+      document.addEventListener("keydown", function (e) {
+        // 列表打开时：只响应 Esc 关闭，不触发点名
+        if (listOpen()) {
+          if (e.key === "Escape") { e.preventDefault(); closeList(); }
+          return;
+        }
+        if (e.code === "Space" || e.key === "Enter") {
+          // 按钮/复选框自己会用空格、回车，别抢它们的键
+          if (e.target && (e.target.tagName === "BUTTON" || e.target.tagName === "INPUT")) return;
+          e.preventDefault();
+          start();
+          return;
+        }
+        if (e.key === "+" || e.key === "=" || e.key === "ArrowUp") {
+          e.preventDefault(); setCount(count + 1); updateStatus();
+        } else if (e.key === "-" || e.key === "_" || e.key === "ArrowDown") {
+          e.preventDefault(); setCount(count - 1); updateStatus();
+        }
+      });
+
+      /* ---------------- 启动 ---------------- */
+      setCount(DEFAULT_COUNT);
+      renderNames(["准备开始"], 1);
+      updateStatus();
+    })();
+  </script>
 </body>
+
 </html>
